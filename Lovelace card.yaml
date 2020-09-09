@@ -3,8 +3,8 @@
         cards:
           - type: conditional
             conditions:
-              - entity: alarm_control_panel.ha_alarm
-                state: triggered
+              - entity: input_boolean.alarm_triggered_pending
+                state: 'on'
             card:
                 cards:
                   - content: ' '
