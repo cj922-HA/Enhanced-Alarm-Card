@@ -1,3 +1,4 @@
+#Single Lovelace card
       - type: vertical-stack
         cards:
           - type: conditional
