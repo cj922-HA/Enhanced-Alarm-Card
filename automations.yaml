@@ -1,3 +1,4 @@
+#Sets Alarm to Home When Lovelace Card Sets Counter Value
 - id: '1596516365501'
   alias: 'Alarm: Set Home'
   description: ''
@@ -16,12 +17,9 @@
   - data: {}
     entity_id: alarm_control_panel.ha_alarm
     service: alarm_control_panel.alarm_arm_home
-  - data:
-      value: 30
-    entity_id: counter.alarm_gauge_max
-    service: counter.configure
   mode: single
   
+#Sets Alarm to Away When Lovelace Card Sets Counter Value
 - id: '1596517792508'
   alias: 'Alarm: Set Away'
   description: ''
@@ -35,12 +33,9 @@
   - data: {}
     entity_id: alarm_control_panel.ha_alarm
     service: alarm_control_panel.alarm_arm_away
-  - data:
-      value: 60
-    entity_id: counter.alarm_gauge_max
-    service: counter.configure
   mode: single
-  
+
+#Clears Counter When Pending State Exited
 - id: '1596518008634'
   alias: 'Alarm: Clear Counter'
   description: ''
@@ -57,6 +52,7 @@
     service: counter.configure
   mode: single
   
+#Sets Counter When Alarm Triggered in Away State
 - id: '1596519091795'
   alias: 'Alarm: Set Counter - Away Trigger'
   description: ''
@@ -68,18 +64,18 @@
   condition: []
   action:
   - data:
+      initial: 30
       value: 30
     entity_id: counter.alarm
     service: counter.configure
-  - data:
-      initial: 30
-      value: 30
-    entity_id: counter.alarm_gauge_max
-    service: counter.configure
+  - data: {}
+    entity_id: input_boolean.alarm_triggered_pending
+    service: input_boolean.turn_on
   mode: single
   
+#Decrements Counter
 - id: '1596558833265'
-  alias: 'Alarm: Start Alarm Counter'
+  alias: 'Alarm: Run Alarm Counter'
   description: ''
   trigger:
   - platform: time_pattern
@@ -94,6 +90,7 @@
     service: counter.decrement
   mode: single
   
+#Resets View Keypad Boolean
 - id: '1596641872770'
   alias: 'Alarm: Reset View Keypad Boolean'
   description: ''
@@ -108,5 +105,35 @@
   action:
   - data: {}
     entity_id: input_boolean.alarm_view_keypad
+    service: input_boolean.turn_off
+  mode: single
+
+#Sets Triggered Input Boolean for Lovelace Triggered Card
+- id: '1599661870465'
+  alias: 'Alarm: Triggered'
+  description: ''
+  trigger:
+  - entity_id: alarm_control_panel.ha_alarm
+    platform: state
+    to: triggered
+  condition: []
+  action:
+  - data: {}
+    entity_id: input_boolean.alarm_triggered_pending
+    service: input_boolean.turn_on
+  mode: single
+
+#Clears Triggered Input Boolean when disarmed
+- id: '1599662074991'
+  alias: 'Alarm: Clear Triggered'
+  description: ''
+  trigger:
+  - entity_id: alarm_control_panel.ha_alarm
+    platform: state
+    to: disarmed
+  condition: []
+  action:
+  - data: {}
+    entity_id: input_boolean.alarm_triggered_pending
     service: input_boolean.turn_off
   mode: single
