@@ -1,12 +1,15 @@
 # Enhanced-Alarm-Card
-Better Lovelace Alarm Card for Home Assistant
+
+
+**Better Lovelace Alarm Card for Home Assistant**
+***[Pictures](https://github.com/cj922-HA/Enhanced-Alarm-Card#pictures) --- [Prerequisites](https://github.com/cj922-HA/Enhanced-Alarm-Card#prerequisites) --- [Setup](https://github.com/cj922-HA/Enhanced-Alarm-Card#setup)***
  - Works with *manual* or *manual_mqtt* platforms.
  - Lovelace card that changes based on conditions.
  - Visible Countdown Timer
  - Keypad hidden when not needed.
  - Works based on automations, input_boolean, counter, and of course the manual alarm.
 
-*Upfront note: I am not a coder by any means so forgive any inefficiences in my methods* 
+*Upfront note: I am not a coder by any means so forgive any inefficiencies in my methods* 
 
  ## Pictures
  ![enter image description here](https://i.imgur.com/82WhFjl.jpg)View when disarmed
