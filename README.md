@@ -2,6 +2,7 @@
 
 
 **Better Lovelace Alarm Card for Home Assistant**
+
 ***[Pictures](https://github.com/cj922-HA/Enhanced-Alarm-Card#pictures) --- [Prerequisites](https://github.com/cj922-HA/Enhanced-Alarm-Card#prerequisites) --- [Setup](https://github.com/cj922-HA/Enhanced-Alarm-Card#setup)***
  - Works with *manual* or *manual_mqtt* platforms.
  - Lovelace card that changes based on conditions.
