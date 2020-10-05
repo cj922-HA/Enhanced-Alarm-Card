@@ -1,242 +1,51 @@
 #Single Lovelace card
-      - type: vertical-stack
+    cards:
+      - type: 'custom:stack-in-card' #Alarm Card Stack
         cards:
-          - type: conditional
-            conditions:
-              - entity: input_boolean.alarm_triggered_pending
-                state: 'on'
-            card:
+          - type: horizontal-stack #Top Row (Title; State; Icon; Keypad toggle; Countdown)
+            cards:
+              - type: markdown #Left (Title; State)
+                style:
+                  ha-markdown:
+                    .: |
+                      ha-markdown.no-header {
+                        padding-top: 12px !important;
+                      }
+                    $: |
+                      ha-markdown-element > div > div {
+                         overflow: hidden;
+                         white-space: nowrap;
+                         text-overflow: ellipsis;
+                      }
+                      ha-markdown-element > div > :first-child {
+                         color: var(--secondary-text-color);
+                         line-height: 40px;
+                         font-weight: 500;
+                         font-size: 16px;
+                       }
+                      ha-markdown-element > div > :nth-child(2) {
+                        color: var(--primary-text-color);
+                        margin-top: -4px;
+                        line-height: 28px;
+                        font-size: 28px;
+                       }
+                      ha-markdown-element > div > :nth-child(3) {
+                        margin-top: 2px;
+                        color: var(--secondary-text-color);
+                       }
+                content: |
+                  <div>
+                    <div>Home Alarm</div>
+                    <div>{{ states('alarm_control_panel.ha_alarm') | capitalize }}</div>
+                    <div>{{ relative_time(states.alarm_control_panel.ha_alarm.last_changed) }}</div>
+                  </div>
+              - type: vertical-stack #Right (Icon; Keypad toggle; Countdown)
                 cards:
-                  - content: ' '
-                    title: Alarm Triggered!
-                    type: markdown
-                  - entity: alarm_control_panel.ha_alarm
-                    hold_action:
-                        action: more-info
-                    icon: 'mdi:home-alert'
-                    show_icon: true
-                    show_name: false
-                    show_state: false
-                    tap_action:
-                        action: call-service
-                        service: alarm_control_panel.alarm_trigger
-                        service_data:
-                            entity_id: alarm_control_panel.ha_alarm
-                    type: button
-                mode: vertical
-                type: 'custom:stack-in-card'
-          - type: conditional
-            conditions:
-              - entity: alarm_control_panel.ha_alarm
-                state: disarmed
-            card:
-                cards:
-                  - cards:
-                      - entity: alarm_control_panel.ha_alarm
-                        icon: ''''''
-                        name: Home Alarm
-                        type: entity
-                      - entity: alarm_control_panel.ha_alarm
-                        hold_action:
-                            action: more-info
-                        icon: 'mdi:shield-check'
-                        show_icon: true
-                        show_name: false
-                        show_state: false
-                        tap_action:
-                            action: none
-                        type: button
-                    type: horizontal-stack
-                  - content: ' '
-                    type: markdown
-                  - cards:
-                      - hold_action:
-                            action: none
-                        icon: 'mdi:shield-home'
-                        icon_height: 50px
-                        name: ARM HOME
-                        show_icon: true
-                        show_name: true
-                        show_state: false
-                        tap_action:
-                            action: call-service
-                            service: counter.configure
-                            service_data:
-                                entity_id: counter.alarm
-                                initial: 30
-                                value: 30
-                        type: button
-                      - hold_action:
-                            action: none
-                        icon: 'mdi:shield-lock'
-                        icon_height: 50px
-                        name: ARM AWAY
-                        show_icon: true
-                        show_name: true
-                        show_state: false
-                        tap_action:
-                            action: call-service
-                            service: counter.configure
-                            service_data:
-                                entity_id: counter.alarm
-                                initial: 60
-                                value: 60
-                        type: button
-                    type: horizontal-stack
-                mode: vertical
-                type: 'custom:stack-in-card'
-          - conditions:
-              - entity: alarm_control_panel.ha_alarm
-                state: armed_home
-              - entity: input_boolean.alarm_view_keypad
-                state: 'off'
-            type: conditional
-            card:
-                cards:
-                  - cards:
-                      - entity: alarm_control_panel.ha_alarm
-                        icon: ''''''
-                        name: Home Alarm
-                        type: entity
-                      - entity: alarm_control_panel.ha_alarm
-                        hold_action:
-                            action: more-info
-                        icon: 'mdi:shield-home'
-                        show_icon: true
-                        show_name: false
-                        show_state: false
-                        tap_action:
-                            action: none
-                        type: button
-                    type: horizontal-stack
-                  - content: ' '
-                    type: markdown
-                  - entity: input_boolean.alarm_view_keypad
-                    hold_action:
-                        action: none
-                    icon: 'mdi:shield-off-outline'
-                    icon_height: 50px
-                    name: DISARM
-                    show_icon: true
-                    show_name: true
-                    show_state: false
-                    tap_action:
-                        action: toggle
-                    type: button
-                mode: vertical
-                type: 'custom:stack-in-card'
-          - card:
-                cards:
-                  - cards:
-                      - entity: alarm_control_panel.ha_alarm
-                        icon: ''''''
-                        name: Home Alarm
-                        type: entity
-                      - entity: alarm_control_panel.ha_alarm
-                        hold_action:
-                            action: more-info
-                        icon: 'mdi:shield-lock'
-                        show_icon: true
-                        show_name: false
-                        show_state: false
-                        tap_action:
-                            action: none
-                        type: button
-                    type: horizontal-stack
-                  - content: ' '
-                    type: markdown
-                  - entity: input_boolean.alarm_view_keypad
-                    hold_action:
-                        action: none
-                    icon: 'mdi:shield-off-outline'
-                    icon_height: 50px
-                    name: DISARM
-                    show_icon: true
-                    show_name: true
-                    show_state: false
-                    tap_action:
-                        action: toggle
-                    type: button
-                mode: vertical
-                type: 'custom:stack-in-card'
-            conditions:
-              - entity: alarm_control_panel.ha_alarm
-                state: armed_away
-              - entity: input_boolean.alarm_view_keypad
-                state: 'off'
-            type: conditional
-          - card:
-                cards:
-                  - cards:
-                      - entity: alarm_control_panel.ha_alarm
-                        icon: ''''''
-                        name: Home Alarm
-                        type: entity
-                      - hold_action:
-                            action: none
-                        icon: 'mdi:close'
-                        icon_height: 60px
-                        name: Close Keypad
-                        show_icon: true
-                        show_name: true
-                        show_state: false
-                        tap_action:
-                            action: call-service
-                            service: input_boolean.turn_off
-                            service_data:
-                                entity_id: input_boolean.alarm_view_keypad
-                        type: button
-                    type: horizontal-stack
-                  - entity: alarm_control_panel.ha_alarm
-                    name: ' '
-                    states:
-                      - arm_home
-                      - arm_away
-                    type: alarm-panel
-                mode: vertical
-                type: 'custom:stack-in-card'
-            conditions:
-              - entity: input_boolean.alarm_view_keypad
-                state: 'on'
-            type: conditional
-          - card:
-                cards:
-                  - cards:
-                      - entity: alarm_control_panel.ha_alarm
-                        icon: ''''''
-                        name: Home Alarm
-                        type: entity
-                      - type: 'custom:config-template-card'
-                        entities:
-                          - counter.alarm
-                          - alarm_control_panel.ha_alarm
-                        card:
-                            entity: counter.alarm
-                            max: >-
-                                ${states['counter.alarm'].attributes.initial === 30 ? 30 :
-                                60}
-                            measurement: s
-                            min: 0
-                            scale: 35px
-                            severity:
-                                amber: 0
-                                green: 30
-                                red: 0
-                            type: 'custom:gauge-card'
-                    type: horizontal-stack
-                  - entity: alarm_control_panel.ha_alarm
-                    name: ' '
-                    states:
-                      - arm_home
-                      - arm_away
-                    type: alarm-panel
-                mode: vertical
-                type: 'custom:stack-in-card'
-            conditions:
-              - entity: alarm_control_panel.ha_alarm
-                state_not: disarmed
-              - entity: alarm_control_panel.ha_alarm
-                state_not: armed_home
-              - entity: alarm_control_panel.ha_alarm
-                state_not: armed_away
-            type: conditional
+                  - type: 'custom:button-card' #Icon
+                  - type: 'custom:button-card' #Toggle Keypad
+                  - type: 'custom:circle-sensor-card' #Countdown
+          - type: horizontal-stack #Arm Buttons
+            cards:
+              - type: 'custom:button-card' #Arm Home
+              - type: 'custom:button-card' #Arm Away
+          - type: alarm-panel #Keypad
