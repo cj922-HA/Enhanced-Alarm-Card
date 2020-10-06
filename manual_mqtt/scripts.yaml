@@ -1,5 +1,6 @@
 alarm_arming:
   alias: Alarm Arming Script
+  
   fields:
     arm_state:
       description: Home or Away
@@ -7,31 +8,21 @@ alarm_arming:
     set_by_mqtt:
       description: True if arm command sent by MQTT
       example: true
+
   sequence:
+  
   - choose: #Sets alarm if not set bt MQTT
     - conditions:
-      - condition: and
-        conditions:
-        - condition: template
-          value_template: '{{ set_by_mqtt == false }}'
-        - condition: template
-          value_template: '{{ arm_state == ''Home'' }}'
+      - condition: template
+        value_template: '{{ set_by_mqtt == true }}'
+      sequence: []
+    - conditions: []
       sequence:
-      - service: alarm_control_panel.alarm_arm_home
-        data:
-          entity_id: alarm_control_panel.ha_alarm
-    - conditions:
-      - condition: and
-        conditions:
-        - condition: template
-          value_template: '{{ set_by_mqtt == false }}'
-        - condition: template
-          value_template: '{{ arm_state == ''Away'' }}'
-      sequence:
-      - service: alarm_control_panel.alarm_arm_away
+      - service_template: "{{ 'alarm_control_panel.alarm_arm_home' if arm_state == Home else 'alarm_control_panel.alarm_arm_away' }}"
         data:
           entity_id: alarm_control_panel.ha_alarm
     default: []
+    
   - choose: #Sets countdown counter
     - conditions:
       - condition: state
@@ -48,52 +39,65 @@ alarm_arming:
               {{ (states('counter.alarm_pending_time') + states('counter.alarm_away_pending_time')) | int }}
             {% endif %}
     default: []
+    
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+      
   - service: script.alarm_notifications_arming #Call script for arming notifications
     data_template:
-      arm_state: {{ arm_state }}
+      arm_state: "{{ arm_state }}"
+      
   - wait_template: '{{ not is_state(''alarm_control_panel.ha_alarm'', ''pending'') }}' #Wait until no longer pending
+  
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+      
   - service: counter.configure #Reset Counter
     data:
       value: 0
       initial: 0
     entity_id: counter.alarm
+    
   mode: single
   icon: mdi:shield-lock
+  
 alarm_notifications_arming:
   alias: Alarm Notifications when Arming
+  
   fields:
     arm_state:
       description: Home or Away
       example: Home
+
   sequence:
+
   - choose: #Initial notification
     - conditions: #Skip if no delay time
       - condition: state
         state: pending
         entity_id: alarm_control_panel.ha_alarm
       sequence:
+
 ## Begin initial notification(s) ##
       - service: mqtt.publish 
         data:
           payload_template: '{"speak":"Arming Alarm as {{ arm_state }} in {{ state_attr(''counter.alarm'', ''initial'') }} seconds."}'
           topic: alarmpanel/command
-        default: []
+    default: []
 ## End initial notification(s) ##
+
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
   - choose: #30 second notification block
     ## Notes:
     ## You can change time for notification to a chosen value 'n' per comments below
@@ -118,6 +122,7 @@ alarm_notifications_arming:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 30 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -125,6 +130,7 @@ alarm_notifications_arming:
           topic: alarmpanel/command
 ## End 30 second notification(s) ##
     default: []
+
   - choose: #15 second notification block
     - conditions:
       - condition: numeric_state
@@ -146,6 +152,7 @@ alarm_notifications_arming:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+          
 ## Begin 15 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -153,6 +160,7 @@ alarm_notifications_arming:
           topic: alarmpanel/command
 ## End 15 second notification(s) ##
     default: []
+    
   - choose: #10 second notification block
     - conditions:
       - condition: numeric_state
@@ -174,6 +182,7 @@ alarm_notifications_arming:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 10 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -181,6 +190,7 @@ alarm_notifications_arming:
           topic: alarmpanel/command
 ## End 10 second notification(s) ##
     default: []
+
   - choose: #5 second notification block
     - conditions:
       - condition: numeric_state
@@ -202,6 +212,7 @@ alarm_notifications_arming:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 5 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -209,34 +220,42 @@ alarm_notifications_arming:
           topic: alarmpanel/command
 ## End 5 second notification(s) ##
     default: []
+
   - wait_template: '{{ not is_state(''alarm_control_panel.ha_alarm'', ''pending'') }}' #Wait until no longer pending
+  
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
 ## Begin system armed notification(s) ##
   - service: mqtt.publish
     data:
       payload_template: '{"speak":"Alarm armed as {{ arm_state }}."}'
       topic: alarmpanel/command
 ## End system armed notification(s) ##
+
   mode: single
   icon: mdi:message-text-lock
 alarm_trigger:
   alias: Alarm Trigger Script
+
   fields:
     arm_state:
       description: Home or Away
       example: Home
+
   sequence:
   - service: alarm_control_panel.alarm_trigger #Trigger alarm
     data: {}
     entity_id: alarm_control_panel.ha_alarm
+
   - service: input_boolean.turn_on #Set boolean for lovelace card 
     data:
       entity_id: input_boolean.alarm_triggered_pending
     entity_id: input_boolean.alarm_triggered_pending
+
   - choose: #Sets countdown counter
     - conditions:
       - condition: state
@@ -247,42 +266,58 @@ alarm_trigger:
         data_template:
           entity_id: counter.alarm
           initial: >-
-            {% if arm_state == 'Home' %}
+            {% if arm_state == Home %}
               {{ (states('counter.alarm_delay_time') + states('counter.alarm_home_delay_time')) | int }}
             {% else %}
               {{ (states('counter.alarm_delay_time') + states('counter.alarm_away_delay_time')) | int }}
             {% endif %}
+    default: []
+
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
   - service: script.alarm_notifications_trigger #Call script for trigger notifications
     data_template:
-      arm_state: {{ arm_state }}
+      arm_state: "{{ arm_state }}"
+
   - wait_template: '{{ not is_state(''alarm_control_panel.ha_alarm'', ''pending'') }}' #Wait until no longer pending
+  
   - condition: not #End script if disarmed
+    conditions:
+    - condition: state
+      entity_id: alarm_control_panel.ha_alarm
+      state: disarmed
+
 #Good spot to add any actions you want to occur immediately after trigger
   - service: switch.turn_on
     data: {}
     entity_id: switch.noonlight_switch
+
   - wait_template: '{{ is_state(''script.alarm_notifications_trigger'', ''off'') }}' #Wait until notifications complete
+
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
   - service: script.alarm_trigger_actions #Call script for trigger actions
     data:
       trigger_action: trigger
   mode: single
   icon: mdi:shield-alert
+
 alarm_notifications_trigger:
   alias: Alarm Notifications when Triggered
+
   fields:
     arm_state:
       description: Home or Away
       example: Home
+
   sequence:
   - choose: #Initial notification
     - conditions: #Skip if no delay time
@@ -290,18 +325,21 @@ alarm_notifications_trigger:
         state: pending
         entity_id: alarm_control_panel.ha_alarm
       sequence:
+
 ## Begin initial notification(s) ##
       - service: mqtt.publish 
         data:
           payload_template: '{"speak":"Alarm has been triggered! You have {{ state_attr(''counter.alarm'', ''initial'') }} seconds to disarm."}'
           topic: alarmpanel/command
-        default: []
+    default: []
 ## End initial notification(s) ##
+
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
   - choose: #30 second notification block
     ## Notes:
     ## You can change time for notification to a chosen value 'n' per comments below
@@ -326,6 +364,7 @@ alarm_notifications_trigger:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 30 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -333,6 +372,7 @@ alarm_notifications_trigger:
           topic: alarmpanel/command
 ## End 30 second notification(s) ##
     default: []
+
   - choose: #15 second notification block
     - conditions:
       - condition: numeric_state
@@ -354,6 +394,7 @@ alarm_notifications_trigger:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 15 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -361,6 +402,7 @@ alarm_notifications_trigger:
           topic: alarmpanel/command
 ## End 15 second notification(s) ##
     default: []
+
   - choose: #10 second notification block
     - conditions:
       - condition: numeric_state
@@ -382,6 +424,7 @@ alarm_notifications_trigger:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 10 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -389,6 +432,7 @@ alarm_notifications_trigger:
           topic: alarmpanel/command
 ## End 10 second notification(s) ##
     default: []
+
   - choose: #5 second notification block
     - conditions:
       - condition: numeric_state
@@ -410,6 +454,7 @@ alarm_notifications_trigger:
         - condition: state
           entity_id: alarm_control_panel.ha_alarm
           state: disarmed
+
 ## Begin 5 second notification(s) ##
       - service: mqtt.publish
         data:
@@ -417,12 +462,15 @@ alarm_notifications_trigger:
           topic: alarmpanel/command
 ## End 5 second notification(s) ##
     default: []
+
   - wait_template: '{{ not is_state(''alarm_control_panel.ha_alarm'', ''pending'') }}' #Wait until no longer pending
+
   - condition: not #End script if disarmed
     conditions:
     - condition: state
       entity_id: alarm_control_panel.ha_alarm
       state: disarmed
+
 ## Begin system armed notification(s) ##
   - repeat:
       count: '2'
@@ -432,23 +480,28 @@ alarm_notifications_trigger:
           payload_template: '{''speak'':''Alarm has been triggered! The police have been called.''}'
           topic: alarmpanel/command
 ## End system armed notification(s) ##
+
   - delay: 00:00:15 #Allows notifications time to announce; useful if siren(s) are used in trigger_actions
   mode: single
-  icon: mdi:message-text-lock
+  icon: mdi:message-alert-outline
+
 alarm_trigger_actions:
 ## Note: ##
 ## For other entity domains (light etc) ##
 ## Define new variable and add action as indicated below ##
 ## Or add actions for individual entities ##
   alias: Alarm Trigger Actions
+
   variables: # Switches to turn on when triggered
     switch_list: switch.kitchen_siren_switch_2, switch.garage_ring_siren, switch.living_room_ring_siren,
       switch.backyard_siren
     ## Define any new variables here ##
+
   fields:
     trigger_action:
       description: trigger or exit_trigger
       example: trigger
+
   sequence:
   - choose:
     - conditions:
@@ -460,13 +513,14 @@ alarm_trigger_actions:
           entity_id: '{{ switch_list }}'
 # Start additional actions when alarm enters triggered state
 # End additional actions when alarm enters triggered state
+
     - conditions:
       - condition: template
         value_template: '{{ trigger_action == exit_trigger }}'
       sequence:
       - service: switch.turn_off
         data_template:
-          entity_id: '{{ switch_list }}'
+          entity_id: '{{ switch_list }}'      
 # Start additional actions when alarm exits triggered state
 # End additional actions when alarm exits triggered state
     default: []
