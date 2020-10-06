@@ -1,0 +1,47 @@
+counter:
+  alarm:
+#  alarm_home_away:
+  alarm_pending_time: #Manual: Time to arm if not defined for state;  Manual_MQTT: Time to arm, added on if defined for state
+    initial: !secret alarm_pending_time
+  alarm_delay_time: #Manual: Time to disarm if not defined for state;  Manual_MQTT: Time to disarm, added on if defined for state
+    initial: !secret alarm_delay_time
+  alarm_home_pending_time: #Time to arm for Home
+    initial: !secret alarm_home_pending_time
+  alarm_home_delay_time: #Time to disarm for Home
+    initial: !secret alarm_home_delay_time
+  alarm_away_pending_time: #Time to arm for Away
+    initial: !secret alarm_away_pending_time
+  alarm_away_delay_time: #Time to disarm for Away
+    initial: !secret alarm_away_delay_time
+
+input_boolean:
+  alarm_triggered_pending:
+  alarm_view_keypad:
+
+input_text:
+  last_alarm_trigger:
+  last_alarm_trigger_mode:
+
+input_datetime:
+  last_alarm_trigger_time:
+    has_date: true
+    has_time: true
+
+browser_mod:
+
+alarm_control_panel:
+  - platform: manual_mqtt
+    state_topic: home/alarm
+    command_topic: home/alarm/set
+    code: !secret alarm_code
+    code_arm_required: false
+    pending_time: !secret alarm_pending_time
+    trigger_time: 1800
+    disarm_after_trigger: false
+    delay_time: !secret alarm_delay_time
+    armed_home:
+      pending_time: !secret alarm_home_pending_time
+      delay_time: !secret alarm_home_delay_time
+    armed_away:
+      pending_time: !secret alarm_away_pending_time
+      delay_time: !secret alarm_away_delay_time
