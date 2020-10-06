@@ -1,9 +1,11 @@
 - id: Alarm_Run_Counter
   alias: 'Alarm: Run Alarm Counter'
   description: 'Decrements counter when pending'
+  
   trigger:
   - platform: time_pattern
     seconds: /1
+
   condition:
   - condition: and
     conditions:
@@ -13,14 +15,17 @@
     - condition: numeric_state
       entity_id: counter.alarm
       above: '0'
+
   action:
   - data:
       entity_id: counter.alarm
     service: counter.decrement
   mode: single
+  
 - id: Alarm_Arming_MQTT
   alias: 'Alarm: Armed Via MQTT'
   description: 'Starts arming script if armed via MQTT'
+
   trigger:
   - platform: mqtt
     topic: home/alarm/set
@@ -28,31 +33,21 @@
   - platform: mqtt
     topic: home/alarm/set
     payload: ARM_AWAY
+
   condition: []
   action:
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.payload == ''ARM_HOME'' }}'
-      sequence:
-      - service: script.alarm_arming
-        data:
-          set_by_mqtt: true
-          arm_state: Home
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.payload == ''ARM_AWAY'' }}'
-      sequence:
-      - data:
-          set_by_mqtt: true
-          arm_state: Away
-        service: script.alarm_arming
-    default: []
+  - service: script.alarm_arming
+    data_template:
+      set_by_mqtt: true
+      arm_state: "{{ 'Home' if trigger.payload == 'ARM_HOME' else 'Away' }}"
   mode: single
+
 - id: Alarm_Trigger_Disarm
   alias: 'Alarm: Trigger or Disarm'
   description: 'Trigger alarm and disarm actions'
+
   trigger:
+
 ## Start alarm triggers ##
   - entity_id:
     - binary_sensor.front_door_sensor
@@ -68,12 +63,15 @@
     platform: state
     to: Open
 ## End alarm triggers ##
+
   - platform: state
     entity_id: alarm_control_panel.ha_alarm
     to: disarmed
+
   condition:
   - condition: or #Triggers to ignore for home or away
     conditions:
+
     - condition: and #Home
       conditions:
       - condition: state
@@ -82,20 +80,25 @@
       - condition: template #Trigger to ignore for home, copy as needed
         value_template: '{{ not trigger.entity_id == ''REPLACE_WITH_ENTITY_ID''
           }}'
+
     - condition: and #Away
       conditions:
       - condition: state
         entity_id: alarm_control_panel.ha_alarm
         state: armed_away
+
       - condition: template #Trigger to ignore for away, copy as needed
         value_template: '{{ not trigger.entity_id == ''REPLACE_WITH_ENTITY_ID''
           }}'
+
     - condition: template #Proceed if disarmed
       value_template: '{{ trigger.entity_id == ''alarm_control_panel.ha_alarm'' }}'
+
   action:
   - entity_id: input_boolean.alarm_view_keypad
     service: input_boolean.turn_off
     data: {}
+
   - choose: #Disarm actions or call trigger script
     - conditions: #Disarm actions
       - condition: state
@@ -104,7 +107,7 @@
       sequence:
       - service: script.alarm_trigger_actions
         data_template:
-          trigger_action: {{ 'exit_trigger' if "armed" in ( states('trigger.from_state') | string ) else 'none' | string }}
+          trigger_action: "{{ exit_trigger if is_state('trigger.from_state', 'triggered') else none }}"
       - service: input_boolean.turn_off
         data:
           entity_id: input_boolean.alarm_triggered_pending
@@ -113,12 +116,14 @@
           value: 0
           initial: 0
         entity_id: counter.alarm
+
 ## Start disarm notification(s) or additional action(s)
       - service: mqtt.publish
         data:
           payload_template: '{''speak'':''Alarm has been disarmed.''}'
           topic: alarmpanel/command
 ## End disarm notification(s) or additional action(s)
+
     - conditions: #Trigger
       - condition: state
         entity_id: alarm_control_panel.ha_alarm
@@ -129,7 +134,7 @@
       - service: input_text.set_value
         entity_id: input_text.last_alarm_trigger_mode
         data_template:
-          value: {{ 'Home' if is_state('alarm_control_panel.ha_alarm', 'armed_home') else 'Away' | string }}
+          value: "{{ 'Home' if is_state('alarm_control_panel.ha_alarm', 'armed_home') else 'Away' }}"
       - service: input_text.set_value
         entity_id: input_text.last_alarm_trigger
         data_template:
@@ -137,7 +142,7 @@
             {% if state_attr(trigger.entity_id, 'friendly_name') != None %}
               {{ state_attr(trigger.entity_id, 'friendly_name') | string }}
             {% else %}
-              {{ trigger.entity_id }}
+              {{ trigger.entity_id | string }}
             {% endif %}
       - service: input_datetime.set_datetime
         entity_id: input_datetime.last_alarm_trigger_time
@@ -145,6 +150,6 @@
           timestamp: '{{ now().timestamp() }}'
       - service: script.alarm_trigger
         data_template:
-          arm_state: {{ states('input_text.last_alarm_trigger_mode') }}
+          arm_state: "{{ states('input_text.last_alarm_trigger_mode') }}"
     default: []
   mode: single
